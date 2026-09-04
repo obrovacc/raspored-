@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raspored časova</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f2f1ee;
+    --panel:#ffffff;
+    --ink:#1b1f2a;
+    --ink-soft:#666c78;
+    --line:#e2e0da;
+
+    --blue:#2f55d4;
+    --blue-deep:#1e3aa0;
+    --blue-tint:#e8ecfc;
+    --blue-tint2:#d9e0fa;
+
+    --yellow:#c98a12;
+    --yellow-deep:#8c5b02;
+    --yellow-tint:#fbf0d9;
+    --yellow-tint2:#f7e4bd;
+
+    --accent: var(--blue);
+    --accent-deep: var(--blue-deep);
+    --accent-tint: var(--blue-tint);
+    --accent-tint2: var(--blue-tint2);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:28px 16px 60px;
+    transition:background .4s ease;
+  }
+  body.shift-yellow{ --accent:var(--yellow); --accent-deep:var(--yellow-deep); --accent-tint:var(--yellow-tint); --accent-tint2:var(--yellow-tint2); }
+
+  body.dark{
+    --bg:#14161c;
+    --panel:#1b1e27;
+    --ink:#edf0f6;
+    --ink-soft:#8b93a3;
+    --line:#2b2f3b;
+
+    --blue:#6d8dff;
+    --blue-deep:#aabeff;
+    --blue-tint:rgba(109,141,255,0.16);
+    --blue-tint2:rgba(109,141,255,0.28);
+
+    --yellow:#e2ac45;
+    --yellow-deep:#f2cd85;
+    --yellow-tint:rgba(226,172,69,0.16);
+    --yellow-tint2:rgba(226,172,69,0.28);
+  }
+  body.dark .cell{background:#20232d;}
+  body.dark .modal-overlay{background:rgba(0,0,0,.6);}
+
+  .wrap{max-width:980px;margin:0 auto;}
+
+  header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:22px;
+  }
+  .title-block h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:clamp(28px,4vw,38px);
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .title-block p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+
+  .clock{
+    text-align:right;
+    font-family:'Space Grotesk',sans-serif;
+  }
+  .clock-row{display:flex;align-items:center;gap:10px;justify-content:flex-end;}
+  .clock .time{
+    font-size:22px;
+    font-weight:600;
+    font-variant-numeric: tabular-nums;
+  }
+  .clock .day{
+    font-size:13px;
+    color:var(--ink-soft);
+    text-transform:capitalize;
+  }
+  .theme-toggle{
+    border:1px solid var(--line);
+    background:var(--panel);
+    width:34px;height:34px;
+    border-radius:50%;
+    cursor:pointer;
+    font-size:15px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 auto;
+  }
+
+  .now-status{
+    margin-top:6px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  .now-status strong{color:var(--accent-deep);font-weight:600;}
+  .remaining-info{
+    margin-top:3px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+  }
+  .progress-track{
+    margin-top:6px;
+    width:180px;
+    height:4px;
+    border-radius:4px;
+    background:var(--line);
+    overflow:hidden;
+    margin-left:auto;
+  }
+  .progress-fill{
+    height:100%;
+    width:0%;
+    background:var(--accent);
+    border-radius:4px;
+    transition:width 1s linear;
+  }
+
+  .test-banner{
+    display:none;
+    align-items:center;
+    gap:10px;
+    background:#fdecea;
+    border:1px solid #f3c6bf;
+    color:#9a2f21;
+    padding:10px 16px;
+    border-radius:12px;
+    font-size:13.5px;
+    font-weight:600;
+    margin-bottom:16px;
+    cursor:pointer;
+  }
+  .test-banner.show{display:flex;}
+  body.dark .test-banner{background:#3a2320;border-color:#5a352e;color:#f2a99b;}
+  .test-tag{
+    display:inline-block;
+    font-size:10px;
+    font-weight:700;
+    background:var(--accent);
+    color:#fff;
+    padding:1px 6px;
+    border-radius:5px;
+    margin-left:6px;
+    vertical-align:middle;
+  }
+
+  .switcher{
+    display:inline-flex;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:4px;
+    gap:4px;
+    margin-bottom:22px;
+  }
+  .switcher button{
+    border:none;
+    background:transparent;
+    padding:9px 18px;
+    border-radius:999px;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    color:var(--ink-soft);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    transition:all .25s ease;
+  }
+  .switcher button .dot{
+    width:9px;height:9px;border-radius:50%;
+    background:currentColor;
+  }
+  .switcher button[data-shift="blue"]{color:var(--blue-deep);}
+  .switcher button[data-shift="yellow"]{color:var(--yellow-deep);}
+  .switcher button.active[data-shift="blue"]{background:var(--blue-tint);}
+  .switcher button.active[data-shift="yellow"]{background:var(--yellow-tint);}
+
+  .daynav{
+    display:none;
+    gap:6px;
+    margin-bottom:14px;
+    overflow-x:auto;
+    padding-bottom:4px;
+  }
+  .daynav button{
+    flex:0 0 auto;
+    border:1px solid var(--line);
+    background:var(--panel);
+    padding:8px 14px;
+    border-radius:10px;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .daynav button.active{
+    background:var(--accent-tint);
+    border-color:var(--accent-tint2);
+    color:var(--accent-deep);
+  }
+
+  .grid-scroll{
+    overflow-x:auto;
+    border-radius:16px;
+    border:1px solid var(--line);
+    background:var(--panel);
+  }
+
+  table{
+    border-collapse:collapse;
+    width:100%;
+    min-width:720px;
+  }
+  thead th{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    text-align:left;
+    padding:14px 12px;
+    border-bottom:1px solid var(--line);
+    color:var(--ink-soft);
+    position:sticky;
+    top:0;
+    background:var(--panel);
+  }
+  thead th .full{display:block;font-size:12px;font-weight:500;color:var(--ink-soft);margin-top:2px;}
+
+  th.timecol, td.timecol{
+    width:96px;
+    color:var(--ink-soft);
+    font-size:12px;
+    font-variant-numeric: tabular-nums;
+    white-space:nowrap;
+    border-right:1px solid var(--line);
+  }
+  td.timecol .period{
+    display:block;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:15px;
+    color:var(--ink);
+  }
+
+  tbody td{
+    padding:10px;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+  }
+  tbody tr:last-child td{border-bottom:none;}
+
+  .cell{
+    border-radius:10px;
+    padding:10px 12px;
+    min-height:48px;
+    font-weight:600;
+    font-size:14px;
+    background:#f7f7f5;
+    border:1px solid transparent;
+    transition:all .2s ease;
+  }
+  .cell.filled{background:var(--accent-tint);color:var(--accent-deep);cursor:pointer;position:relative;}
+  .cell.filled:hover{filter:brightness(0.97);}
+  .cell.empty{
+    background:transparent;
+    border:1px dashed var(--line);
+    color:var(--ink-soft);
+    font-weight:500;
+    font-size:12.5px;
+  }
+  .note-dot{
+    display:inline-block;
+    width:6px;height:6px;
+    border-radius:50%;
+    background:var(--accent-deep);
+    margin-left:6px;
+    vertical-align:middle;
+  }
+  .note-preview{
+    display:block;
+    font-weight:500;
+    font-size:11.5px;
+    margin-top:4px;
+    color:var(--accent-deep);
+    opacity:.8;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  /* Note modal */
+  .modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(27,31,42,.45);
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:50;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    background:var(--panel);
+    border-radius:16px;
+    padding:22px;
+    width:100%;
+    max-width:380px;
+    box-shadow:0 20px 50px rgba(0,0,0,.2);
+  }
+  .modal h3{
+    font-family:'Space Grotesk',sans-serif;
+    margin:0 0 4px;
+    font-size:19px;
+  }
+  .modal p.sub{margin:0 0 14px;color:var(--ink-soft);font-size:13px;}
+  .modal textarea{
+    width:100%;
+    min-height:100px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    resize:vertical;
+    color:var(--ink);
+  }
+  .modal textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .modal .test-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:12px;
+    font-size:13.5px;
+    font-weight:600;
+  }
+  .modal .test-row input[type="checkbox"]{width:16px;height:16px;}
+  .modal .test-date{
+    margin-top:8px;
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:8px 12px;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    background:var(--panel);
+    display:none;
+  }
+  .modal .test-date.show{display:block;}
+  .modal-actions{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:14px;
+    gap:8px;
+  }
+  .modal-actions .left{display:flex;gap:8px;}
+  .modal-actions button{
+    border:none;
+    border-radius:10px;
+    padding:9px 16px;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  .btn-save{background:var(--accent);color:#fff;}
+  .btn-cancel{background:transparent;color:var(--ink-soft);}
+  .btn-delete{background:transparent;color:#b3372c;}
+
+  tr.now-row td.today .cell.filled{
+    border-color:var(--accent);
+    box-shadow:0 0 0 1px var(--accent);
+  }
+  .now-badge{
+    display:inline-block;
+    margin-left:6px;
+    font-family:'Space Grotesk',sans-serif;
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:.02em;
+    color:#fff;
+    background:var(--accent);
+    padding:2px 6px;
+    border-radius:5px;
+    vertical-align:middle;
+  }
+
+  /* Mobile: agenda view */
+  @media (max-width: 640px){
+    .grid-scroll{display:none;}
+    .daynav{display:flex;}
+    .agenda{display:flex;flex-direction:column;gap:8px;}
+    .agenda .row{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:12px 14px;
+    }
+    .agenda .row.now{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);}
+    .agenda .row.filled{cursor:pointer;}
+    .agenda .t{
+      font-family:'Space Grotesk',sans-serif;
+      font-weight:700;
+      font-size:13px;
+      width:78px;
+      flex:0 0 auto;
+      color:var(--ink-soft);
+    }
+    .agenda .t .p{display:block;font-size:16px;color:var(--ink);}
+    .agenda .s{
+      font-weight:600;
+      font-size:14.5px;
+      color:var(--accent-deep);
+    }
+    .agenda .s.empty{color:var(--ink-soft);font-weight:500;}
+  }
+  @media (min-width: 641px){ .agenda{display:none;} }
+
+  footer{
+    margin-top:20px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:var(--bg);
+    padding:10px 18px;
+    border-radius:999px;
+    font-family:'Space Grotesk',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    opacity:0;
+    pointer-events:none;
+    transition:all .25s ease;
+    z-index:60;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="title-block">
+      <h1>Raspored časova</h1>
+      <p>Ekonomska škola · II razred</p>
+    </div>
+    <div class="clock">
+      <div class="clock-row">
+        <div>
+          <div class="time" id="clockTime">--:--</div>
+          <div class="day" id="clockDay">—</div>
+        </div>
+        <button class="theme-toggle" id="themeToggle" title="Promeni temu">🌙</button>
+      </div>
+      <div class="now-status" id="nowStatus"></div>
+      <div class="progress-track" id="progressTrack" style="display:none">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="remaining-info" id="remainingInfo"></div>
+    </div>
+  </header>
+
+  <div class="test-banner" id="testBanner"></div>
+
+  <div class="switcher" id="switcher">
+    <button data-shift="blue" class="active"><span class="dot" style="background:#2f55d4"></span>Prepodne</button>
+    <button data-shift="yellow"><span class="dot" style="background:#c98a12"></span>Popodne</button>
+  </div>
+
+  <div class="daynav" id="dayNav"></div>
+
+  <div class="grid-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th class="timecol"></th>
+          <th data-day="PON">Ponedeljak</th>
+          <th data-day="UTO">Utorak</th>
+          <th data-day="SRE">Sreda</th>
+          <th data-day="ČET">Četvrtak</th>
+          <th data-day="PET">Petak</th>
+        </tr>
+      </thead>
+      <tbody id="gridBody"></tbody>
+    </table>
+  </div>
+
+  <div class="agenda" id="agenda"></div>
+
+  <footer>Klikni na predmet da dodaš belešku · Aktivan čas se automatski ističe</footer>
+
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalSubject">Predmet</h3>
+    <p class="sub" id="modalWhen">Beleška se čuva samo za ovaj termin.</p>
+    <textarea id="modalTextarea" placeholder="Npr. ponesi domaći, sledeći test je..."></textarea>
+    <label class="test-row">
+      <input type="checkbox" id="modalIsTest">
+      Ovo je test / kontrolni
+    </label>
+    <input type="date" id="modalTestDate" class="test-date">
+    <div class="modal-actions">
+      <div class="left">
+        <button class="btn-save" id="modalSave">Sačuvaj</button>
+        <button class="btn-cancel" id="modalCancel">Otkaži</button>
+      </div>
+      <button class="btn-delete" id="modalDelete">Obriši</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const DAYS = ["PON","UTO","SRE","ČET","PET"];
+  const DAY_FULL = {PON:"Ponedeljak",UTO:"Utorak",SRE:"Sreda",ČET:"Četvrtak",PET:"Petak"};
+
+  // Morning (blue) schedule, periods 1-7
+  const blueSchedule = {
+    PON: ["ČOS","Engleski","Srpski","Srpski","Likovno","Pravo","Fizičko"],
+    UTO: ["Engleski","Korespondencija","Korespondencija","Računovodstvo","Računovodstvo","Poslovna ekon.","Građansko"],
+    SRE: ["Matematika","Posl. Engleski","Posl. Informatika","Ekon. Poslovanje","Pravo","Principi ekon.",""],
+    "ČET": ["Matematika","Matematika","Ekon. Poslovanje","Ekon. Poslovanje","Istorija","Javne finansije","Poslovna ekon."],
+    PET: ["Srpski","Istorija","Fizičko","Računovodstvo","Principi ekon.","Javne finansije",""]
+  };
+
+  // Afternoon (yellow) = same day, reversed period order
+  const yellowSchedule = {};
+  DAYS.forEach(d => { yellowSchedule[d] = [...blueSchedule[d]].reverse(); });
+
+  const blueTimes   = ["07:45-08:30","08:35-09:20","09:35-10:20","10:25-11:10","11:25-12:10","12:15-13:00","13:05-13:50"];
+  const yellowTimes = ["14:00-14:45","14:50-15:35","15:50-16:35","16:40-17:25","17:40-18:25","18:30-19:15","19:20-20:05"];
+
+  const DAY_KEY = {PON:"PON",UTO:"UTO",SRE:"SRE","ČET":"CET",PET:"PET"};
+  const REVERSE_DAY_KEY = {PON:"PON",UTO:"UTO",SRE:"SRE",CET:"ČET",PET:"PET"};
+
+  // Persists straight to the phone's browser storage, so it survives
+  // closing the app, no internet, and reopening days later.
+  const storage = {
+    async get(key){
+      const v = localStorage.getItem(key);
+      return v === null ? null : { key, value: v };
+    },
+    async set(key, value){
+      localStorage.setItem(key, value);
+      return { key, value };
+    },
+    async delete(key){
+      localStorage.removeItem(key);
+      return { key, deleted: true };
+    },
+    async list(prefix){
+      const keys = [];
+      for(let i=0;i<localStorage.length;i++){
+        const k = localStorage.key(i);
+        if(!prefix || k.startsWith(prefix)) keys.push(k);
+      }
+      return { keys };
+    }
+  };
+
+  let currentShift = "blue";
+  let selectedMobileDay = 0; // index into DAYS, default set on load to today
+  let notesCache = {};
+  let activeNoteKey = null;
+  let isDark = false;
+
+  function noteKey(shift, dayCode, period){
+    return `note:${shift}:${DAY_KEY[dayCode]}:${period}`;
+  }
+
+  function parseNoteKey(key){
+    const [, shift, dayAscii, period] = key.split(":");
+    return { shift, dayCode: REVERSE_DAY_KEY[dayAscii], period: Number(period) };
+  }
+
+  function subjectForKey(key){
+    const { shift, dayCode, period } = parseNoteKey(key);
+    const schedule = shift === "blue" ? blueSchedule : yellowSchedule;
+    return schedule[dayCode] ? schedule[dayCode][period] : "";
+  }
+
+  function timeForKey(key){
+    const { shift, period } = parseNoteKey(key);
+    const times = shift === "blue" ? blueTimes : yellowTimes;
+    return times[period];
+  }
+
+  // A note is stored as JSON: {text, test, testDate}. Older plain-text notes
+  // (from before the test tag existed) are read as {text: <old value>}.
+  function parseNoteValue(raw){
+    try{
+      const obj = JSON.parse(raw);
+      if(obj && typeof obj === "object" && "text" in obj){
+        return { text: obj.text || "", test: !!obj.test, testDate: obj.testDate || null };
+      }
+    }catch(e){ /* not JSON — treat as legacy plain text */ }
+    return { text: raw, test: false, testDate: null };
+  }
+
+  function showToast(msg){
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> t.classList.remove("show"), 2200);
+  }
+
+  async function loadNotes(){
+    try{
+      const list = await storage.list("note:");
+      if(!list || !list.keys) return;
+      for(const key of list.keys){
+        try{
+          const res = await storage.get(key);
+          if(res && res.value){
+            notesCache[key] = parseNoteValue(res.value);
+          }
+        }catch(e){ /* key vanished between list and get, skip */ }
+      }
+    }catch(e){
+      console.warn("Beleške nisu dostupne u ovom okruženju:", e);
+    }
+  }
+
+  function openNoteModal(shift, dayCode, period, subject, timeRange){
+    activeNoteKey = noteKey(shift, dayCode, period);
+    const existing = notesCache[activeNoteKey] || { text:"", test:false, testDate:null };
+    document.getElementById("modalSubject").textContent = subject;
+    document.getElementById("modalWhen").textContent = `${DAY_FULL[dayCode]} · ${timeRange} · ${shift === "blue" ? "prepodne" : "popodne"}`;
+    document.getElementById("modalTextarea").value = existing.text;
+    const checkbox = document.getElementById("modalIsTest");
+    const dateInput = document.getElementById("modalTestDate");
+    checkbox.checked = existing.test;
+    dateInput.value = existing.testDate || "";
+    dateInput.classList.toggle("show", existing.test);
+    document.getElementById("modalOverlay").classList.add("open");
+    document.getElementById("modalTextarea").focus();
+  }
+
+  function closeNoteModal(){
+    document.getElementById("modalOverlay").classList.remove("open");
+    activeNoteKey = null;
+  }
+
+  async function saveNote(){
+    if(!activeNoteKey) return;
+    const key = activeNoteKey;
+    const text = document.getElementById("modalTextarea").value.trim();
+    const isTest = document.getElementById("modalIsTest").checked;
+    const testDate = isTest ? document.getElementById("modalTestDate").value : null;
+
+    // Nothing to save at all (no text, not a flagged test) — treat as delete
+    const hasContent = text || (isTest && testDate);
+    try{
+      if(hasContent){
+        const payload = JSON.stringify({ text, test: isTest, testDate });
+        await storage.set(key, payload);
+        // Verify it actually landed before trusting it locally
+        const check = await storage.get(key);
+        if(check && check.value === payload){
+          notesCache[key] = { text, test: isTest, testDate };
+          showToast("Sačuvano");
+        } else {
+          showToast("Greška — pokušaj ponovo");
+          return; // don't close, let user retry
+        }
+      } else {
+        await storage.delete(key);
+        delete notesCache[key];
+        showToast("Obrisano");
+      }
+    }catch(e){
+      console.warn("Čuvanje beleške nije uspelo:", e);
+      showToast("Beleške nisu dostupne ovde");
+      return;
+    }
+    closeNoteModal();
+    render();
+    updateTestBanner();
+  }
+
+  async function deleteNote(){
+    if(!activeNoteKey) return;
+    const key = activeNoteKey;
+    try{
+      await storage.delete(key);
+      showToast("Obrisano");
+    }catch(e){ /* nothing to delete */ }
+    delete notesCache[key];
+    closeNoteModal();
+    render();
+    updateTestBanner();
+  }
+
+  async function loadThemePref(){
+    try{
+      const res = await storage.get("pref:theme");
+      if(res && res.value) return res.value;
+    }catch(e){ /* no saved pref yet */ }
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+
+  async function setTheme(theme){
+    isDark = theme === "dark";
+    document.body.classList.toggle("dark", isDark);
+    document.getElementById("themeToggle").textContent = isDark ? "☀️" : "🌙";
+    try{ await storage.set("pref:theme", theme); }catch(e){ /* non-fatal */ }
+  }
+
+  function toMinutes(hhmm){
+    const [h,m] = hhmm.split(":").map(Number);
+    return h*60+m;
+  }
+
+  function getTodayIndex(){
+    const jsDay = new Date().getDay(); // 0 Sun .. 6 Sat
+    return jsDay >= 1 && jsDay <= 5 ? jsDay - 1 : -1; // -1 if weekend
+  }
+
+  function getActivePeriod(times){
+    const now = new Date();
+    const nowMin = now.getHours()*60 + now.getMinutes();
+    for(let i=0;i<times.length;i++){
+      const [start,end] = times[i].split("-");
+      if(nowMin >= toMinutes(start) && nowMin <= toMinutes(end)) return i;
+    }
+    return -1;
+  }
+
+  function buildDayNav(){
+    const nav = document.getElementById("dayNav");
+    nav.innerHTML = "";
+    DAYS.forEach((d,i)=>{
+      const b = document.createElement("button");
+      b.textContent = DAY_FULL[d].slice(0,3);
+      b.dataset.idx = i;
+      if(i === selectedMobileDay) b.classList.add("active");
+      b.addEventListener("click", ()=>{ selectedMobileDay = i; render(); });
+      nav.appendChild(b);
+    });
+  }
+
+  function updateNowStatus(){
+    const schedule = currentShift === "blue" ? blueSchedule : yellowSchedule;
+    const times = currentShift === "blue" ? blueTimes : yellowTimes;
+    const todayIdx = getTodayIndex();
+    const statusEl = document.getElementById("nowStatus");
+    const trackEl = document.getElementById("progressTrack");
+    const fillEl = document.getElementById("progressFill");
+    if(!statusEl) return;
+
+    if(todayIdx === -1){
+      statusEl.textContent = "Vikend — nema nastave";
+      trackEl.style.display = "none";
+      return;
+    }
+
+    const dayCode = DAYS[todayIdx];
+    const daySchedule = schedule[dayCode];
+    const now = new Date();
+    const nowMin = now.getHours()*60 + now.getMinutes();
+
+    let active = -1;
+    for(let i=0;i<times.length;i++){
+      const [s,e] = times[i].split("-");
+      if(nowMin >= toMinutes(s) && nowMin <= toMinutes(e)){ active = i; break; }
+    }
+
+    if(active !== -1){
+      const [s,e] = times[active].split("-");
+      const startMin = toMinutes(s), endMin = toMinutes(e);
+      const pct = Math.min(100, Math.max(0, ((nowMin - startMin) / (endMin - startMin)) * 100));
+      const subj = daySchedule[active] || "slobodan čas";
+      const nextSubj = daySchedule[active+1];
+      statusEl.innerHTML = `Sada: <strong>${subj}</strong> do ${e}` +
+        (nextSubj !== undefined ? ` · sledeći: ${nextSubj || "slobodan čas"} u ${times[active+1].split("-")[0]}` : "");
+      trackEl.style.display = "block";
+      fillEl.style.width = pct + "%";
+    } else {
+      let nextIdx = -1;
+      for(let i=0;i<times.length;i++){
+        if(toMinutes(times[i].split("-")[0]) > nowMin){ nextIdx = i; break; }
+      }
+      trackEl.style.display = "none";
+      if(nextIdx !== -1){
+        const subj = daySchedule[nextIdx] || "slobodan čas";
+        statusEl.innerHTML = `Sledeći: <strong>${subj}</strong> u ${times[nextIdx].split("-")[0]}`;
+      } else {
+        statusEl.textContent = "Nastava je završena za danas";
+      }
+    }
+  }
+
+  function pluralCas(n){
+    // Serbian: 1 čas, 2-4 časa, 5+ (and 11-14) časova
+    const mod10 = n % 10, mod100 = n % 100;
+    if(n === 0) return "časova";
+    if(mod10 === 1 && mod100 !== 11) return "čas";
+    if(mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return "časa";
+    return "časova";
+  }
+
+  function updateRemainingInfo(){
+    const el = document.getElementById("remainingInfo");
+    if(!el) return;
+    const todayIdx = getTodayIndex();
+    if(todayIdx === -1){
+      el.textContent = "Vikend — bez časova";
+      return;
+    }
+    const schedule = currentShift === "blue" ? blueSchedule : yellowSchedule;
+    const times = currentShift === "blue" ? blueTimes : yellowTimes;
+    const now = new Date();
+    const nowMin = now.getHours()*60 + now.getMinutes();
+
+    const daySchedule = schedule[DAYS[todayIdx]];
+    let todayCount = 0;
+    for(let i=0;i<7;i++){
+      if(daySchedule[i] && toMinutes(times[i].split("-")[1]) > nowMin) todayCount++;
+    }
+    let weekCount = todayCount;
+    for(let d = todayIdx+1; d < 5; d++){
+      weekCount += schedule[DAYS[d]].filter(s => s).length;
+    }
+
+    if(todayIdx === 4){
+      el.textContent = `Još ${todayCount} ${pluralCas(todayCount)} do vikenda`;
+    } else {
+      el.textContent = `Još ${todayCount} ${pluralCas(todayCount)} danas · ${weekCount} do vikenda`;
+    }
+  }
+
+  function updateTestBanner(){
+    const banner = document.getElementById("testBanner");
+    if(!banner) return;
+    const now = new Date();
+    const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let best = null;
+    for(const key in notesCache){
+      const n = notesCache[key];
+      if(n && n.test && n.testDate){
+        const d = new Date(n.testDate + "T00:00:00");
+        const diff = Math.round((d - todayMid) / 86400000);
+        if(diff >= 0 && (!best || diff < best.diff)) best = { key, diff };
+      }
+    }
+    if(!best){
+      banner.classList.remove("show");
+      banner.onclick = null;
+      return;
+    }
+    const subj = subjectForKey(best.key) || "?";
+    const when = best.diff === 0 ? "danas" : best.diff === 1 ? "sutra" : `za ${best.diff} dana`;
+    banner.innerHTML = `🔔 Test iz <strong>${subj}</strong> — ${when}`;
+    banner.classList.add("show");
+    banner.onclick = ()=>{
+      const { shift, dayCode, period } = parseNoteKey(best.key);
+      const times = shift === "blue" ? blueTimes : yellowTimes;
+      openNoteModal(shift, dayCode, period, subj, times[period]);
+    };
+  }
+
+  function render(){
+    const schedule = currentShift === "blue" ? blueSchedule : yellowSchedule;
+    const times = currentShift === "blue" ? blueTimes : yellowTimes;
+    const todayIdx = getTodayIndex();
+    const activePeriod = getActivePeriod(times);
+
+    // header highlight
+    document.querySelectorAll("thead th[data-day]").forEach((th,i)=>{
+      th.classList.toggle("today", i === todayIdx);
+    });
+
+    // desktop grid
+    const body = document.getElementById("gridBody");
+    body.innerHTML = "";
+    for(let p=0;p<7;p++){
+      const tr = document.createElement("tr");
+      if(p === activePeriod) tr.classList.add("now-row");
+
+      const tdTime = document.createElement("td");
+      tdTime.className = "timecol";
+      tdTime.innerHTML = `<span class="period">${p+1}</span>${times[p]}`;
+      tr.appendChild(tdTime);
+
+      DAYS.forEach((d,i)=>{
+        const td = document.createElement("td");
+        if(i === todayIdx) td.classList.add("today");
+        const subj = schedule[d][p];
+        const cell = document.createElement("div");
+        if(subj){
+          const key = noteKey(currentShift, d, p);
+          cell.className = "cell filled";
+          const label = document.createElement("span");
+          label.textContent = subj;
+          cell.appendChild(label);
+          if(i === todayIdx && p === activePeriod){
+            const badge = document.createElement("span");
+            badge.className = "now-badge";
+            badge.textContent = "SADA";
+            cell.appendChild(badge);
+          }
+          if(notesCache[key] && notesCache[key].text){
+            const preview = document.createElement("span");
+            preview.className = "note-preview";
+            preview.textContent = notesCache[key].text;
+            if(notesCache[key].test){
+              const tag = document.createElement("span");
+              tag.className = "test-tag";
+              tag.textContent = "TEST";
+              preview.appendChild(tag);
+            }
+            cell.appendChild(preview);
+          } else if(notesCache[key] && notesCache[key].test){
+            const tag = document.createElement("span");
+            tag.className = "test-tag";
+            tag.textContent = "TEST";
+            cell.appendChild(tag);
+          }
+          cell.addEventListener("click", ()=> openNoteModal(currentShift, d, p, subj, times[p]));
+        } else {
+          cell.className = "cell empty";
+          cell.textContent = "slobodno";
+        }
+        td.appendChild(cell);
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    }
+
+    // mobile agenda for selected day
+    const agenda = document.getElementById("agenda");
+    agenda.innerHTML = "";
+    const d = DAYS[selectedMobileDay];
+    for(let p=0;p<7;p++){
+      const row = document.createElement("div");
+      row.className = "row";
+      const isNow = (selectedMobileDay === todayIdx && p === activePeriod);
+      if(isNow) row.classList.add("now");
+      const subj = schedule[d][p];
+      if(subj) row.classList.add("filled");
+      const key = subj ? noteKey(currentShift, d, p) : null;
+      const noteObj = key ? notesCache[key] : null;
+      const notePreview = noteObj && noteObj.text
+        ? `<span class="note-preview">${noteObj.text}${noteObj.test ? '<span class="test-tag">TEST</span>' : ""}</span>`
+        : (noteObj && noteObj.test ? '<span class="test-tag">TEST</span>' : "");
+      row.innerHTML = `
+        <div class="t"><span class="p">${p+1}</span>${times[p]}</div>
+        <div class="s ${subj ? "" : "empty"}">${subj || "slobodno"}${isNow ? '<span class="now-badge">SADA</span>' : ""}${notePreview}</div>
+      `;
+      if(subj) row.addEventListener("click", ()=> openNoteModal(currentShift, d, p, subj, times[p]));
+      agenda.appendChild(row);
+    }
+
+    buildDayNav();
+  }
+
+  function updateClock(){
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,"0");
+    const mm = String(now.getMinutes()).padStart(2,"0");
+    document.getElementById("clockTime").textContent = `${hh}:${mm}`;
+    document.getElementById("clockDay").textContent = now.toLocaleDateString("sr-Latn-RS", { weekday:"long", day:"numeric", month:"long" });
+    render();
+    updateNowStatus();
+    updateRemainingInfo();
+    updateTestBanner();
+  }
+
+  document.getElementById("switcher").addEventListener("click", (e)=>{
+    const btn = e.target.closest("button[data-shift]");
+    if(!btn) return;
+    currentShift = btn.dataset.shift;
+    document.body.classList.toggle("shift-yellow", currentShift === "yellow");
+    document.querySelectorAll("#switcher button").forEach(b=>b.classList.toggle("active", b===btn));
+    render();
+    updateNowStatus();
+    updateRemainingInfo();
+  });
+
+  document.getElementById("themeToggle").addEventListener("click", ()=>{
+    setTheme(isDark ? "light" : "dark");
+  });
+
+  document.getElementById("modalIsTest").addEventListener("change", (e)=>{
+    document.getElementById("modalTestDate").classList.toggle("show", e.target.checked);
+  });
+
+  document.getElementById("modalSave").addEventListener("click", saveNote);
+  document.getElementById("modalDelete").addEventListener("click", deleteNote);
+  document.getElementById("modalCancel").addEventListener("click", closeNoteModal);
+  document.getElementById("modalOverlay").addEventListener("click", (e)=>{
+    if(e.target.id === "modalOverlay") closeNoteModal();
+  });
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape") closeNoteModal();
+  });
+
+  const todayStart = getTodayIndex();
+  selectedMobileDay = todayStart >= 0 ? todayStart : 0;
+
+  (async function init(){
+    const theme = await loadThemePref();
+    await setTheme(theme);
+    await loadNotes();
+    updateClock();
+  })();
+
+  setInterval(updateClock, 30000);
+  setInterval(updateNowStatus, 1000);
+
+</script>
+</body>
+</html>
